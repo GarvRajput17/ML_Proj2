@@ -1,1 +1,44 @@
-/venv/
+# Python
+venv/
+env/
+ENV/
+.venv/
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Large processed data files (keep original CSVs in data folders)
+processed_*_features.csv
+train_target.csv
+submission.csv
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+
+# Model files
+*.pth
+*.pt
+*.ckpt
+*.model
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Processed data (if regenerated)
+processed_*_features.csv
+train_target.csv
