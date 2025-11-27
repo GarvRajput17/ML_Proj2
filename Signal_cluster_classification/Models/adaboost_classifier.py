@@ -1,5 +1,5 @@
 """
-AdaBoost Classifier training pipeline for COPD risk prediction.
+AdaBoost Classifier training pipeline for Signal Cluster Classification.
 Loads the preprocessed feature matrices to stay consistent with other models.
 """
 
@@ -32,10 +32,10 @@ def load_data(data_dir: str = None):
         data_dir = os.path.join(project_root, "Signal_cluster_classification")
     
     X_train = pd.read_csv(os.path.join(data_dir, "processed_data", "processed_train_features.csv"))
-    y_train = pd.read_csv(os.path.join(data_dir, "train_target.csv"))["has_copd_risk"]
+    y_train = pd.read_csv(os.path.join(data_dir, "train_target.csv"))["category"]
     X_test = pd.read_csv(os.path.join(data_dir, "processed_data", "processed_test_features.csv"))
     test_df = pd.read_csv(os.path.join(data_dir, "test.csv"))
-    test_patient_ids = test_df["patient_id"]
+    test_sample_ids = test_df["sample_id"]
 
     # Basic cleanup so the model does not crash.
     if X_train.isnull().values.any():
@@ -50,7 +50,7 @@ def load_data(data_dir: str = None):
 
     print(f"Training samples: {X_train.shape[0]} | Features: {X_train.shape[1]}")
     print(f"Test samples: {X_test.shape[0]}")
-    return X_train, y_train, X_test, test_patient_ids
+    return X_train, y_train, X_test, test_sample_ids
 
 
 def build_adaboost() -> AdaBoostClassifier:
@@ -80,7 +80,8 @@ def train_adaboost(X_train: pd.DataFrame, y_train: pd.Series) -> AdaBoostClassif
     print("=" * 80)
 
     X_np = X_train.to_numpy(dtype=np.float32)
-    y_np = y_train.to_numpy(dtype=np.int64)
+    # For categorical target, keep as string/object type
+    y_np = y_train.to_numpy()
 
     X_tr, X_val, y_tr, y_val = train_test_split(
         X_np,
@@ -119,7 +120,7 @@ def make_predictions(model: AdaBoostClassifier, X_test: pd.DataFrame):
 
 
 def create_submission(
-    patient_ids: pd.Series,
+    sample_ids: pd.Series,
     predictions: np.ndarray,
     output_path: str = None,
 ):
@@ -131,8 +132,8 @@ def create_submission(
     
     submission = pd.DataFrame(
         {
-            "patient_id": patient_ids.values,
-            "has_copd_risk": predictions.astype(int),
+            "sample_id": sample_ids.values,
+            "category": predictions,
         }
     )
     submission.to_csv(output_path, index=False)
@@ -142,10 +143,10 @@ def create_submission(
 
 
 def main():
-    X_train, y_train, X_test, patient_ids = load_data()
+    X_train, y_train, X_test, sample_ids = load_data()
     model = train_adaboost(X_train, y_train)
     predictions, _ = make_predictions(model, X_test)
-    create_submission(patient_ids, predictions)
+    create_submission(sample_ids, predictions)
 
 
 if __name__ == "__main__":
