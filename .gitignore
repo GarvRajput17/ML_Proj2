@@ -10,10 +10,42 @@ __pycache__/
 *.so
 .Python
 
-# Large processed data files (keep original CSVs in data folders)
-processed_*_features.csv
-train_target.csv
-submission.csv
+# CSV files (all CSV files are large and should not be uploaded)
+*.csv
+
+# CSV files - explicit entries
+Single_cluster_classification/processed_data/processed_test_features.csv
+Single_cluster_classification/processed_data/processed_train_features.csv
+Single_cluster_classification/sample_submission.csv.csv
+Single_cluster_classification/submissions/submission_kernel_svm.csv
+Single_cluster_classification/test.csv
+Single_cluster_classification/test20.csv
+Single_cluster_classification/train.csv
+Single_cluster_classification/train_target.csv
+chronic-obstructive/ids_simple.csv
+chronic-obstructive/processed_data/processed_test_features.csv
+chronic-obstructive/processed_data/processed_train_features.csv
+chronic-obstructive/processed_data/test_processed_simple.csv
+chronic-obstructive/processed_data/train_processed_simple.csv
+chronic-obstructive/sample_submission.csv
+chronic-obstructive/submission.csv
+chronic-obstructive/submissions/submission.csv
+chronic-obstructive/submissions/submission_adaboost.csv
+chronic-obstructive/submissions/submission_bayes.csv
+chronic-obstructive/submissions/submission_ensemble.csv
+chronic-obstructive/submissions/submission_kernel_svm.csv
+chronic-obstructive/submissions/submission_knn.csv
+chronic-obstructive/submissions/submission_lr.csv
+chronic-obstructive/submissions/submission_mlp.csv
+chronic-obstructive/submissions/submission_rf.csv
+chronic-obstructive/submissions/submission_svm.csv
+chronic-obstructive/submissions/submission_xgboost.csv
+chronic-obstructive/test.csv
+chronic-obstructive/test20.csv
+chronic-obstructive/train.csv
+chronic-obstructive/train_target.csv
+
+# Large data files
 *.pkl
 *.pickle
 *.h5
@@ -38,7 +70,3 @@ submission.csv
 # OS
 .DS_Store
 Thumbs.db
-
-# Processed data (if regenerated)
-processed_*_features.csv
-train_target.csv
