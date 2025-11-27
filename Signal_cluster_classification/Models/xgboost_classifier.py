@@ -1,5 +1,5 @@
 """
-AdaBoost Classifier training pipeline for COPD risk prediction.
+XGBoost Classifier training pipeline for COPD risk prediction.
 Loads the preprocessed feature matrices to stay consistent with other models.
 """
 
@@ -14,14 +14,17 @@ from sklearn.metrics import (
     f1_score,
 )
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import AdaBoostClassifier
-from sklearn.tree import DecisionTreeClassifier
+
+try:
+    import xgboost as xgb
+except ImportError:
+    raise ImportError("XGBoost is not installed. Please install it using: pip install xgboost")
 
 
 def load_data(data_dir: str = None):
     """Load preprocessed feature matrices and targets."""
     print("\n" + "=" * 80)
-    print("LOADING DATA FOR ADABOOST")
+    print("LOADING DATA FOR XGBOOST")
     print("=" * 80)
 
     # Get the script's directory and resolve paths relative to project root
@@ -29,11 +32,11 @@ def load_data(data_dir: str = None):
     project_root = os.path.dirname(script_dir)
     
     if data_dir is None:
-        data_dir = os.path.join(project_root, "chronic-obstructive")
+        data_dir = os.path.join(project_root, "Signal_cluster_classification")
     
-    X_train = pd.read_csv(os.path.join(data_dir, "processed_train_features.csv"))
+    X_train = pd.read_csv(os.path.join(data_dir, "processed_data", "processed_train_features.csv"))
     y_train = pd.read_csv(os.path.join(data_dir, "train_target.csv"))["has_copd_risk"]
-    X_test = pd.read_csv(os.path.join(data_dir, "processed_test_features.csv"))
+    X_test = pd.read_csv(os.path.join(data_dir, "processed_data", "processed_test_features.csv"))
     test_df = pd.read_csv(os.path.join(data_dir, "test.csv"))
     test_patient_ids = test_df["patient_id"]
 
@@ -53,34 +56,35 @@ def load_data(data_dir: str = None):
     return X_train, y_train, X_test, test_patient_ids
 
 
-def build_adaboost() -> AdaBoostClassifier:
+def build_xgboost() -> xgb.XGBClassifier:
     """
-    AdaBoost Classifier with Decision Tree as base estimator.
+    XGBoost Classifier with balanced class weights.
     """
-    base_estimator = DecisionTreeClassifier(
-        max_depth=3,
-        min_samples_split=5,
-        min_samples_leaf=2,
-        class_weight="balanced",
-        random_state=42,
-    )
-    
-    return AdaBoostClassifier(
-        estimator=base_estimator,
+    return xgb.XGBClassifier(
         n_estimators=100,
+        max_depth=6,
         learning_rate=0.1,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        scale_pos_weight=1.0,  # Will be adjusted based on class distribution
         random_state=42,
+        eval_metric="logloss",
+        use_label_encoder=False,
     )
 
 
-def train_adaboost(X_train: pd.DataFrame, y_train: pd.Series) -> AdaBoostClassifier:
-    """Train an AdaBoost classifier."""
+def train_xgboost(X_train: pd.DataFrame, y_train: pd.Series) -> xgb.XGBClassifier:
+    """Train an XGBoost classifier."""
     print("\n" + "=" * 80)
-    print("TRAINING ADABOOST")
+    print("TRAINING XGBOOST")
     print("=" * 80)
 
     X_np = X_train.to_numpy(dtype=np.float32)
     y_np = y_train.to_numpy(dtype=np.int64)
+
+    # Calculate scale_pos_weight for class imbalance
+    class_counts = np.bincount(y_np)
+    scale_pos_weight = class_counts[0] / class_counts[1] if class_counts[1] > 0 else 1.0
 
     X_tr, X_val, y_tr, y_val = train_test_split(
         X_np,
@@ -90,8 +94,9 @@ def train_adaboost(X_train: pd.DataFrame, y_train: pd.Series) -> AdaBoostClassif
         random_state=42,
     )
 
-    model = build_adaboost()
-    print("Fitting AdaBoost Classifier...")
+    model = build_xgboost()
+    model.set_params(scale_pos_weight=scale_pos_weight)
+    print(f"Fitting XGBoost Classifier (scale_pos_weight={scale_pos_weight:.2f})...")
     model.fit(X_tr, y_tr)
 
     print("\n" + "-" * 80)
@@ -111,7 +116,7 @@ def train_adaboost(X_train: pd.DataFrame, y_train: pd.Series) -> AdaBoostClassif
     return model
 
 
-def make_predictions(model: AdaBoostClassifier, X_test: pd.DataFrame):
+def make_predictions(model: xgb.XGBClassifier, X_test: pd.DataFrame):
     """Return class predictions and probabilities for the test set."""
     X_test_np = X_test.to_numpy(dtype=np.float32)
     preds = model.predict(X_test_np)
@@ -127,7 +132,7 @@ def create_submission(
     if output_path is None:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(script_dir)
-        output_path = os.path.join(project_root, "chronic-obstructive", "submission_adaboost.csv")
+        output_path = os.path.join(project_root, "Signal_cluster_classification", "submissions", "submission_xgboost.csv")
     
     submission = pd.DataFrame(
         {
@@ -143,7 +148,7 @@ def create_submission(
 
 def main():
     X_train, y_train, X_test, patient_ids = load_data()
-    model = train_adaboost(X_train, y_train)
+    model = train_xgboost(X_train, y_train)
     predictions, _ = make_predictions(model, X_test)
     create_submission(patient_ids, predictions)
 

@@ -45,11 +45,11 @@ def load_data(data_dir: str = None):
     project_root = os.path.dirname(script_dir)
     
     if data_dir is None:
-        data_dir = os.path.join(project_root, "chronic-obstructive")
+        data_dir = os.path.join(project_root, "Signal_cluster_classification")
     
-    X_train = pd.read_csv(os.path.join(data_dir, "processed_train_features.csv"))
+    X_train = pd.read_csv(os.path.join(data_dir, "processed_data", "processed_train_features.csv"))
     y_train = pd.read_csv(os.path.join(data_dir, "train_target.csv"))["has_copd_risk"]
-    X_test = pd.read_csv(os.path.join(data_dir, "processed_test_features.csv"))
+    X_test = pd.read_csv(os.path.join(data_dir, "processed_data", "processed_test_features.csv"))
     test_df = pd.read_csv(os.path.join(data_dir, "test.csv"))
     test_patient_ids = test_df["patient_id"]
 
@@ -375,7 +375,7 @@ def create_submission(
     if output_path is None:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(script_dir)
-        output_path = os.path.join(project_root, "chronic-obstructive", "submission_ensemble.csv")
+        output_path = os.path.join(project_root, "Signal_cluster_classification", "submissions", "submission_ensemble.csv")
     
     submission = pd.DataFrame(
         {

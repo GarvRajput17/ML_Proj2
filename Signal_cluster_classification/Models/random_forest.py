@@ -1,5 +1,5 @@
 """
-Bayes Probabilistic Classifier (Naive Bayes) training pipeline for COPD risk prediction.
+Random Forest Classifier training pipeline for COPD risk prediction.
 Loads the preprocessed feature matrices to stay consistent with other models.
 """
 
@@ -14,13 +14,13 @@ from sklearn.metrics import (
     f1_score,
 )
 from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import GaussianNB
+from sklearn.ensemble import RandomForestClassifier
 
 
 def load_data(data_dir: str = None):
     """Load preprocessed feature matrices and targets."""
     print("\n" + "=" * 80)
-    print("LOADING DATA FOR NAIVE BAYES")
+    print("LOADING DATA FOR RANDOM FOREST")
     print("=" * 80)
 
     # Get the script's directory and resolve paths relative to project root
@@ -28,11 +28,11 @@ def load_data(data_dir: str = None):
     project_root = os.path.dirname(script_dir)
     
     if data_dir is None:
-        data_dir = os.path.join(project_root, "chronic-obstructive")
+        data_dir = os.path.join(project_root, "Signal_cluster_classification")
     
-    X_train = pd.read_csv(os.path.join(data_dir, "processed_train_features.csv"))
+    X_train = pd.read_csv(os.path.join(data_dir, "processed_data", "processed_train_features.csv"))
     y_train = pd.read_csv(os.path.join(data_dir, "train_target.csv"))["has_copd_risk"]
-    X_test = pd.read_csv(os.path.join(data_dir, "processed_test_features.csv"))
+    X_test = pd.read_csv(os.path.join(data_dir, "processed_data", "processed_test_features.csv"))
     test_df = pd.read_csv(os.path.join(data_dir, "test.csv"))
     test_patient_ids = test_df["patient_id"]
 
@@ -52,19 +52,25 @@ def load_data(data_dir: str = None):
     return X_train, y_train, X_test, test_patient_ids
 
 
-def build_naive_bayes() -> GaussianNB:
+def build_random_forest() -> RandomForestClassifier:
     """
-    Gaussian Naive Bayes Classifier.
+    Random Forest Classifier with balanced class weights.
     """
-    return GaussianNB(
-        var_smoothing=1e-9,  # Smoothing parameter for variance
+    return RandomForestClassifier(
+        n_estimators=100,
+        max_depth=20,
+        min_samples_split=5,
+        min_samples_leaf=2,
+        class_weight="balanced",
+        random_state=42,
+        n_jobs=-1,
     )
 
 
-def train_naive_bayes(X_train: pd.DataFrame, y_train: pd.Series) -> GaussianNB:
-    """Train a Naive Bayes classifier."""
+def train_random_forest(X_train: pd.DataFrame, y_train: pd.Series) -> RandomForestClassifier:
+    """Train a Random Forest classifier."""
     print("\n" + "=" * 80)
-    print("TRAINING NAIVE BAYES")
+    print("TRAINING RANDOM FOREST")
     print("=" * 80)
 
     X_np = X_train.to_numpy(dtype=np.float32)
@@ -78,8 +84,8 @@ def train_naive_bayes(X_train: pd.DataFrame, y_train: pd.Series) -> GaussianNB:
         random_state=42,
     )
 
-    model = build_naive_bayes()
-    print("Fitting Gaussian Naive Bayes Classifier...")
+    model = build_random_forest()
+    print("Fitting Random Forest Classifier...")
     model.fit(X_tr, y_tr)
 
     print("\n" + "-" * 80)
@@ -99,7 +105,7 @@ def train_naive_bayes(X_train: pd.DataFrame, y_train: pd.Series) -> GaussianNB:
     return model
 
 
-def make_predictions(model: GaussianNB, X_test: pd.DataFrame):
+def make_predictions(model: RandomForestClassifier, X_test: pd.DataFrame):
     """Return class predictions and probabilities for the test set."""
     X_test_np = X_test.to_numpy(dtype=np.float32)
     preds = model.predict(X_test_np)
@@ -115,7 +121,7 @@ def create_submission(
     if output_path is None:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(script_dir)
-        output_path = os.path.join(project_root, "chronic-obstructive", "submission_bayes.csv")
+        output_path = os.path.join(project_root, "Signal_cluster_classification", "submissions", "submission_rf.csv")
     
     submission = pd.DataFrame(
         {
@@ -131,7 +137,7 @@ def create_submission(
 
 def main():
     X_train, y_train, X_test, patient_ids = load_data()
-    model = train_naive_bayes(X_train, y_train)
+    model = train_random_forest(X_train, y_train)
     predictions, _ = make_predictions(model, X_test)
     create_submission(patient_ids, predictions)
 
